@@ -21,6 +21,6 @@ We creating a chatting app called guftaGo. It is a multi-user chat room that all
 ## Problems Encountered:
 
 - Our main problem was establishing a protocol between client and server that can send instructions not be displayed in the chat.
-  - We solved it by agreeing on the syntax of **&quot;/\&lt;command\&gt;/\&lt;argument\&gt;&quot;**. If user send something in this syntax that is not a valid command, the user is politely informed that it is invalid.
+  - We solved it by agreeing on the syntax of **&quot;/command/argument/&quot;**. If user send something in this syntax that is not a valid command, the user is politely informed that it is invalid.
 - We encountered problem when sending a file to server.
   - We solved this by sending the file size beforehand and then waiting for the file data for that many bytes
