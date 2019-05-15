@@ -11,10 +11,11 @@ def send_to_all(msg, sender):
 ## COMMAND FUNCTIONS
 
 def close_client (clientSocket, name):
+
     clientSocket.send(bytes("/quit", "utf8"))
     clientSocket.close()
     del sockets[clientSocket]
-    send_to_all(name + " has left the chat.", clientSocket)
+    send_to_all(name + " has left the chat.\n", clientSocket)
     send_to_all("/remove/"+name, clientSocket)
 
 
@@ -22,29 +23,26 @@ def change_name (clientSocket, msg, oldName):
     newName = msg[6:]
     send_to_all(oldName + " has changed it name to " + newName, clientSocket)
 
-    send_to_all("/remove/"+oldName, clientSocket)
-    send_to_all("/addname/"+newName, clientSocket)
+    send_to_all("/rename/"+newName+"/"+oldName, clientSocket)
 
     return newName
 
 def recieveFile (clientSocket, msg, name):
     
-    filename = msg.split ('/')[-1]
+    msg  = msg.split ('/')
+    filename = msg[-1]
+    fileSize = int(msg[2])
     msg = name + " Sent a file " + filename
     filename = "files/" + filename
 
+
     f = open(filename, 'wb')
-
-    fileSize = int(clientSocket.recv(SIZE).decode('utf-8'))
-
     sentSize = 0
     while sentSize < fileSize:
-        getS = min(fileSize - sentSize, SIZE)
-        data = clientSocket.recv(getS)
+        data = clientSocket.recv(min(fileSize - sentSize, SIZE))
         sentSize += len(data)
         f.write(data)
     f.close()
-
     send_to_all(msg, clientSocket)
     
 def welcome (clientSocket):
@@ -57,19 +55,15 @@ def welcome (clientSocket):
     send_to_all(name + " is Here!", clientSocket)
 
     ## Online List
-    send_to_all("/addname/"+name, clientSocket)
+    send_to_all("\n/addname/"+name, clientSocket)
     msg = '/addnames'
     for names in sockets.values():
         msg = msg +"/" + names
     clientSocket.send(bytes(msg, "utf8"))
 
-
     sockets[clientSocket] = name
 
     return name
-
-
-
 
 
 # THE FUNCTION
@@ -104,10 +98,7 @@ def manage_client (clientSocket):
             elif msg[:6] == '/name/':
                 name = change_name (clientSocket, msg, name)
             elif msg[:6] == '/file/':
-                uploadThread = Thread ( target = recieveFile,
-                    args = (clientSocket, msg, name, ))
-                uploadThread.start()
-                uploadThread.join()
+                recieveFile (clientSocket, msg, name)
             elif msg[:7] == '/sleep/':
                 msg = msg[7:]
                 try:
@@ -125,7 +116,6 @@ def manage_client (clientSocket):
 ## MAIN IS APPROCHING
         
 sockets = {}
-
 SIZE = 1024
 MAX_CONN = 8
 

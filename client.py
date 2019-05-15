@@ -8,24 +8,32 @@ def receive_msg():
     while True:
         try:
             msg = client_socket.recv(SIZE).decode("utf8")
+            msgs = msg.split('\n')
+            for msg in msgs:
 
-            try:
-                if msg[:9] == "/addnames":
-                    namelist = msg.split("/")[2:]
-                    for name in namelist:
-                        user_list.insert(END, name)
+                print (msg)
 
-                elif msg[:9] == "/addname/":
-                    user_list.insert(END, msg[9:])
-                elif msg[:8] == "/remove/":
-                    print(msg)
-                    user_list.delete (msg[8:])
-                else:
-                    msgs = msg.split('\n')
-                    for msg in msgs:
+                try:
+                    if msg[:9] == "/addnames":
+                        namelist = msg.split("/")[2:]
+                        for name in namelist:
+                            user_list.insert(END, name)
+
+                    elif msg[:9] == "/addname/":
+                        user_list.insert(END, msg[9:])
+                    elif msg[:8] == "/remove/":
+                        index = user_list.Items.IndexOf(msg[8:])
+                        user_list.delete (index)
+                    elif msg[:8] == '/rename/':
+                        msg = msg.split('/')
+                        user_list.insert(END, msg[2])
+                        index = user_list.Items.IndexOf(msg[3])
+                        user_list.delete (index)
+                        print(msg[2], msg[3])
+                    else:
                         msg_list.insert(END, msg)
-            except:
-                pass
+                except:
+                    pass
         except:
             break
 
@@ -36,6 +44,7 @@ def send_msg (event=None):
     client_socket.send(bytes(msg, "utf8"))
     
     if msg == "/quit":
+        client_socket.close()
         Window.quit()
 
 
@@ -49,17 +58,13 @@ def select_file (event=None):
         title = "Select file",
         filetypes = (("all files","*.*"), ("jpeg files","*.jpg")))
 
-
-    client_socket.send(bytes('/file/' + filename, "utf-8"))
+    if filename is None: return
 
     fsize = os.path.getsize(filename)
-    client_socket.send(str(fsize).encode('utf-8'))
-    # ack = client_socket.recv(3).decode("utf8")
-    # print (ack)
+    client_socket.send(bytes('/file/' + str(fsize) + '/' + filename, "utf-8"))
 
     f = open(filename, "rb")
     sendSize = 0
-
     while sendSize < fsize:
         sendS = min(fsize - sendSize, SIZE)
         l = f.read(sendS)
@@ -130,8 +135,9 @@ Window.protocol("WM_DELETE_WINDOW", closing)
 # Conecting
 SIZE = 1024
 client_socket = socket(AF_INET, SOCK_STREAM)
-client_socket.connect(("10.7.53.55", 33002))
+client_socket.connect(("127.0.0.1", 33002))
 
+print(SIZE)
 # Starting Recieve Thread
 receiveThread = Thread(target=receive_msg).start()
 
